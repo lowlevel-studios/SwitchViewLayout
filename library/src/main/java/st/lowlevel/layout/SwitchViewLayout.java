@@ -25,7 +25,6 @@ public class SwitchViewLayout extends FrameLayout {
         void onViewChange(@NonNull SwitchViewLayout view, int id);
     }
 
-    private boolean mAnimationEnabled;
     private Animation mAnimationEnter;
     private Animation mAnimationExit;
     private OnViewChangeListener mOnViewChangeListener;
@@ -82,8 +81,6 @@ public class SwitchViewLayout extends FrameLayout {
         if (attrs != null) {
             TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.SwitchViewLayout);
 
-            setAnimationEnabled(
-                    ta.getBoolean(R.styleable.SwitchViewLayout_animationEnabled, false));
             setEnterAnimation(
                     ta.getResourceId(R.styleable.SwitchViewLayout_animationEnter, R.anim.svl_fade_in));
             setExitAnimation(
@@ -102,7 +99,7 @@ public class SwitchViewLayout extends FrameLayout {
     }
 
     private void setVisibility(@Nullable View view, boolean show, boolean animate) {
-        int newVisibility = (show ? VISIBLE : GONE);
+        int newVisibility = show ? VISIBLE : GONE;
 
         if (view == null || view.getVisibility() == newVisibility) {
             return;
@@ -110,7 +107,7 @@ public class SwitchViewLayout extends FrameLayout {
 
         view.setVisibility(newVisibility);
 
-        if (!mAnimationEnabled || !animate) {
+        if (!animate) {
             return;
         }
 
@@ -125,9 +122,9 @@ public class SwitchViewLayout extends FrameLayout {
         }
     }
 
-    private void showView(int id) {
+    private void showView(int id, boolean animate) {
         for (View child : getChildren()) {
-            setVisibility(child, (child.getId() == id), true);
+            setVisibility(child, (child.getId() == id), animate);
         }
     }
 
@@ -233,17 +230,6 @@ public class SwitchViewLayout extends FrameLayout {
     }
 
     /**
-     * Sets the transition animation state
-     *
-     * @param enabled the desired state
-     * @return SwitchViewLayout
-     */
-    public SwitchViewLayout setAnimationEnabled(boolean enabled) {
-        mAnimationEnabled = enabled;
-        return this;
-    }
-
-    /**
      * Sets the view enter animation
      *
      * @param anim the animation instance or null
@@ -302,11 +288,21 @@ public class SwitchViewLayout extends FrameLayout {
      * @param id the view id
      */
     public void switchView(int id) {
+        switchView(id, false);
+    }
+
+    /**
+     * Switches the active view in the layout
+     *
+     * @param id the view id
+     * @param animate true if the transition should be animated
+     */
+    public void switchView(int id, boolean animate) {
         if (isCurrentView(id)) {
             return;
         }
 
-        showView(id);
+        showView(id, animate);
 
         if (mOnViewChangeListener != null) {
             mOnViewChangeListener.onViewChange(this, id);
