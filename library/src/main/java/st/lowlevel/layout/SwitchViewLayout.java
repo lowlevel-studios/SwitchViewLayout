@@ -9,27 +9,25 @@ import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.SparseArray;
 import android.view.View;
-import android.view.ViewParent;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import st.lowlevel.switchviewlayout.R;
 
 public class SwitchViewLayout extends FrameLayout {
 
     public interface OnViewChangeListener {
-        void onViewChange(@NonNull SwitchViewLayout view, int identifier);
+        void onViewChange(@NonNull SwitchViewLayout view, int id);
     }
-
-    private final SparseArray<View> mViewMap = new SparseArray<>();
 
     private boolean mAnimationEnabled;
     private Animation mAnimationEnter;
     private Animation mAnimationExit;
-    private int mCurrentView = -1;
     private OnViewChangeListener mOnViewChangeListener;
 
     public SwitchViewLayout(@NonNull Context context) {
@@ -45,18 +43,31 @@ public class SwitchViewLayout extends FrameLayout {
         initialize(context, attrs);
     }
 
-    private void addViewIfNeeded(@NonNull View view) {
-        ViewParent parent = view.getParent();
+    @Override
+    public void onViewAdded(View child) {
+        super.onViewAdded(child);
+        setVisibility(child, isCurrentView(child), false);
+    }
 
-        if (parent == null) {
-            addView(view);
-            return;
+    private View findChild(@IdRes int id) {
+        for (View child : getChildren()) {
+            if (child.getId() == id) {
+                return child;
+            }
         }
 
-        if (parent != this) {
-            throw new IllegalArgumentException(
-                    "The given view must be a child of this SwitchViewLayout or have no parent.");
+        return null;
+    }
+
+    @NonNull
+    private List<View> getChildren() {
+        List<View> list = new ArrayList<>();
+
+        for (int i = 0; i < getChildCount(); i++) {
+            list.add(getChildAt(i));
         }
+
+        return list;
     }
 
     private View inflate(@LayoutRes int resId) {
@@ -114,12 +125,9 @@ public class SwitchViewLayout extends FrameLayout {
         }
     }
 
-    private void showView(int identifier) {
-        int size = mViewMap.size();
-
-        for (int i = 0; i < size; i++) {
-            boolean show = (mViewMap.keyAt(i) == identifier);
-            setVisibility(mViewMap.valueAt(i), show, true);
+    private void showView(int id) {
+        for (View child : getChildren()) {
+            setVisibility(child, (child.getId() == id), true);
         }
     }
 
@@ -132,25 +140,14 @@ public class SwitchViewLayout extends FrameLayout {
     }
 
     /**
-     * Adds a new view with the given resource id.
-     * This id will be used as the view identifier.
-     *
-     * @param resId the view resource id
-     * @return SwitchViewLayout
-     */
-    public SwitchViewLayout addView(@IdRes int resId) {
-        return addView(resId, findViewById(resId));
-    }
-
-    /**
      * Adds a new view from the given instance
      *
-     * @param identifier the view identifier
+     * @param id the view id
      * @param view the view instance
      * @return SwitchViewLayout
      */
-    public SwitchViewLayout addView(int identifier, @Nullable View view) {
-        View oldView = mViewMap.get(identifier);
+    public SwitchViewLayout addView(int id, @Nullable View view) {
+        View oldView = findChild(id);
 
         if (view == null || view == oldView) {
             return this;
@@ -160,67 +157,79 @@ public class SwitchViewLayout extends FrameLayout {
             removeView(oldView);
         }
 
-        addViewIfNeeded(view);
-        setVisibility(view, isCurrentView(identifier), false);
-
-        mViewMap.put(identifier, view);
+        view.setId(id);
+        addView(view);
 
         return this;
     }
 
     /**
-     * Adds a new view from a layout resource
+     * Adds a new view from the given layout resource
      *
-     * @param identifier the view identifier
+     * @param id the view id
      * @param resId the layout resource
      * @return SwitchViewLayout
      */
-    public SwitchViewLayout addViewFromLayout(int identifier, @LayoutRes int resId) {
-        return addView(identifier, inflate(resId));
+    public SwitchViewLayout addView(int id, @LayoutRes int resId) {
+        return addView(id, inflate(resId));
     }
 
     /**
-     * Gets the current view identifier
+     * Gets the current view id
      *
-     * @return the current view identifier or -1 if no view is active
+     * @return the current view id or -1 if no view is active
      */
     public int getCurrentView() {
-        return mCurrentView;
+        for (View child : getChildren()) {
+            if (child.getVisibility() == VISIBLE) {
+                return child.getId();
+            }
+        }
+
+        return -1;
     }
 
     /**
-     * Checks if a view exists with the given identifier
+     * Checks if a view exists with the given id
      *
-     * @param identifier the view identifier
+     * @param id the view id
      * @return true if a view exists
      */
-    public boolean hasView(int identifier) {
-        return (mViewMap.get(identifier) != null);
+    public boolean hasView(int id) {
+        return (findChild(id) != null);
     }
 
     /**
-     * Checks if the identifier belongs to the current view
+     * Checks if the id belongs to the current view
      *
-     * @param identifier the view identifier
-     * @return true if the identifier matches
+     * @param id the view id
+     * @return true if the id matches
      */
-    public boolean isCurrentView(int identifier) {
-        return (mCurrentView == identifier);
+    public boolean isCurrentView(int id) {
+        return (getCurrentView() == id);
     }
 
     /**
-     * Removes the view with the given identifier
+     * Checks if the given view is the current view
      *
-     * @param identifier the view identifier
+     * @param view the view instance
+     * @return true if the view matches
      */
-    public void removeView(int identifier) {
-        View view = mViewMap.get(identifier);
+    public boolean isCurrentView(@NonNull View view) {
+        return isCurrentView(view.getId());
+    }
+
+    /**
+     * Removes the view with the given id
+     *
+     * @param id the view id
+     */
+    public void removeView(int id) {
+        View view = findChild(id);
 
         if (view != null) {
             removeView(view);
         }
-
-        mViewMap.remove(identifier);
     }
 
     /**
@@ -290,19 +299,17 @@ public class SwitchViewLayout extends FrameLayout {
     /**
      * Switches the active view in the layout
      *
-     * @param identifier the view identifier
+     * @param id the view id
      */
-    public void switchView(int identifier) {
-        if (isCurrentView(identifier)) {
+    public void switchView(int id) {
+        if (isCurrentView(id)) {
             return;
         }
 
-        showView(identifier);
-
-        mCurrentView = identifier;
+        showView(id);
 
         if (mOnViewChangeListener != null) {
-            mOnViewChangeListener.onViewChange(this, identifier);
+            mOnViewChangeListener.onViewChange(this, id);
         }
     }
 }
