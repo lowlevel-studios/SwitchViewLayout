@@ -228,6 +228,33 @@ public class SwitchViewLayout extends FrameLayout {
             removeView(view);
         }
     }
+    
+    /**
+     * Replaces the view for the given id
+     *
+     * @param id the view id
+     * @param view the view instance
+     */
+    public void replaceView(int id, @Nullable View view) {
+        boolean isCurrent = isCurrentView(id);
+
+        removeView(id);
+        addView(id, view);
+
+        if (isCurrent) {
+            switchView(id, false);
+        }
+    }
+
+    /**
+     * Replaces the view for the given id
+     *
+     * @param id the view id
+     * @param resId the layout resource
+     */
+    public void replaceView(int id, @LayoutRes int resId) {
+        replaceView(id, inflate(resId));
+    }
 
     /**
      * Sets the view enter animation
