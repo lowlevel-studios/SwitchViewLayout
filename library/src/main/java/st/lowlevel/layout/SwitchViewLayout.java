@@ -132,14 +132,14 @@ public class SwitchViewLayout extends FrameLayout {
     }
 
     /**
-     * Adds a new view from a resource id
+     * Adds a new view with the given resource id.
+     * This id will be used as the view identifier.
      *
-     * @param identifier the view identifier
      * @param resId the view resource id
      * @return SwitchViewLayout
      */
-    public SwitchViewLayout addView(int identifier, @IdRes int resId) {
-        return addView(identifier, findViewById(resId));
+    public SwitchViewLayout addView(@IdRes int resId) {
+        return addView(resId, findViewById(resId));
     }
 
     /**
