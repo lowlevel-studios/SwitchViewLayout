@@ -45,7 +45,7 @@ public class SwitchViewLayout extends FrameLayout {
     @Override
     public void onViewAdded(View child) {
         super.onViewAdded(child);
-        setVisibility(child, isCurrentView(child), false);
+        child.setVisibility(GONE);
     }
 
     private View findChild(@IdRes int id) {
